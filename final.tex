@@ -18,26 +18,32 @@
 \lipsum[0]
 \title{Zillow House Price Prediction}\\
 \author{Wei Zou(wz299) Jiahe Xu(jx266)}
-\maketitle
+\maketitle\\
+\textit{Note: that in project proposal and midterm report, the goal of our team is to predict the log(error) of Zillow Estimation. However, when we process further the project, we notice that it focuses more on the feature engineering. Hence, we decide to change our dataset and choose another similar dataset which is to predict the house price rather than predict the log(error) of Zillow Estimation.}
+
 \begin{abstract}
 Zillow home provides a dataset including 21613 house prices with 19 related features which have potential impact on the sale price. This project aims to build multiple models to predict the house sale prices. The models based on random forest, quadratic and huber loss funtions with $l_1$,$l_2$ and without regularization were evaluated with their MSE. Results turn out random forest performs best with MSE lower than 0.03. Further improvement is discussed in the end.
 \end{abstract}
 \section{Introduction}
 Zillow's Zestimate home valuation has influenced the U.S. real estate industry since first released 11 years ago. 
 They devote themselves to collecting as much as possible related data and extracting useful information to help the first-time consumers access to home values information at no cost. 
-In this report, the goal is to use the house features provided by Zillow to estimate the house price. Also, the team is going to figure out which factors play significant roles that determine the house price. It could help Zillow to determine important factors that buyers will concern. Here we use several combinations of loss functions and regularizations, and random forest model to fit the dates sets.
+In this report, the goal is to use a number of house features from Zillow to predict the house price. Also, the team is going to figure out which factor play a significant role that determine the house price. It could help Zillow to figure out the important factors that buyers may concern. Here we use several combinations of loss functions and regularizations, and random forest model to fit the dates sets. 
 \section{Data Analysis}
 \subsection{Data Description}
-This dataset contains house sale prices for King County, which includes Seattle. It includes homes sold between May 2014 and May 2015. This dataset consists of 19 house features plus the price and the id columns, along with 21613 observations. Among all the 19 features, one variable is the date of the transaction, two variables are ordinal and the remaining all are numeric variables.
+This dataset contains house sale prices for King County, which includes Seattle and it includes homes sold between May 2014 and May 2015. Specifically, our dataset consists of 19 house features plus the price and the id columns, along with 21613 observations. Because there are very limited variables in the dataset, we list all the features and consider them all carefully in section 2.3 DATA CLEAN.
+\begin{figure}[h]
+\includegraphics[scale=0.4]{17}
+\caption{Features Table}
+\end{figure}
 
 \subsection{Data Visualization}
 \begin{figure}[h]
 \includegraphics[scale=0.9]{1}
 \caption{ Correlation Matrix Plot}
 \end{figure}
-First of all, we perform the correlation matrix for all variables and plot it as above. As we can see, positive correlations are displayed in blue and negative correlations in red color. Color intensity and the size of the circle are proportional to the correlation coefficients. In the right side of the correlogram, the legend color shows the correlation coefficients and the corresponding colors.
+First of all, we perform the correlation matrix for all variables and plot it. As we can see, positive correlations are displayed in blue and negative correlations in red color. Color intensity and the size of the circle are proportional to the correlation coefficients. In the right side of the correlogram, the legend color shows the correlation coefficients and the corresponding colors.
 
-From the figure, it indicates that the house price is more related to the variables below:\\
+From the figure, it indicates that the house price is highly related to the variables below:\\
 \textbf{grade}: overall grade given to the housing unit.\\
 \textbf{sqft$\rule{0.15cm}{0.3mm}$living}:  square footage of the home.\\
 \textbf{sqft$\rule{0.15cm}{0.3mm}$labove}: square footage of house apart from basement.\\
@@ -53,24 +59,41 @@ From the first column of the figure above, for each of those four variables, it 
 \subsubsection{Data Transformation}
 
 After plotting the price, we find the distribution is skewed to the left, which means the house price tend to be lower level. In order to make the model we fit perform better, it is common to take log to price as the dependent variable.
+
+Note that in this report, we mention MSE, it actually means:\\
+\begin{center}
+$MSE=MEAN((log($predicted price$)- log($true price$))^2)$
+\end{center}
 \begin{figure}[h]
 \includegraphics[scale=1.1]{3}
 \includegraphics[scale=1.1]{4}
 \caption{Histogram of Price}
 \end{figure}
-As for one categorical variables water$\rule{0.15cm}{0.1mm}$front(), it is already transformed to dummy variable with value 0 and 1.
+Among all the 19 features, it contains one date-formatted variable “date”(Transaction date) (eg.20140810T000000), however, regression problems could not handle this kind of variable with type string. Also, we cannot consider it as a categorical variable and separate it to many dummy variables, which may be really multifarious. Hence, our team transform this variable into “date$\rule{0.15cm}{0.1mm}$days”(the number of days from transaction till now).And then it may could be a useful variables and we plot it below. From the plot, it is a stable variable, at every time period, the house with different have stable transactions.
+\begin{figure}[h]
+\includegraphics[scale=0.65]{18}
+\caption{Plot of “date$\rule{0.15cm}{0.1mm}$days”(new features)}
+\end{figure}
+As for one categorical variables water$\rule{0.15cm}{0.1mm}$front(), it is already transformed to dummy variable with value 0 and 1. We can just leave it. 
 
-As for two ordinal variable "condition" (1-5) and "grade" (1-10), we do not need to do any transformation for them. Both of them could be considered as continuous numeric variables and it makes sense that as the grade increases, the house price increases accordingly.
+Moreover, it contains two ordinal variables“condition”(1-5) and “grade”(1-10). There are two alternatives to deal with them. One is to create corresponding number of dummy variables (eg.creating 5 dummy variables for feature condition). Second alternative is that we do not need to do any transformation for them. Both of them could be considered as continuous numeric variables and it makes sense that as the grade increases, the house price increases accordingly.
 
-One more variable we should consider is the variable “zipcode”. Obviously, taking it as numeric variable does not make sense for fitting a model. We could translate it to a categorical variable. Each zip code corresponds to a variable and we could separate this variable into many variable, each represented by dummy variable with value 0 and 1. The other option is to delete this variable.
+One more variable we should consider is the variable “zipcode”. Obviously, taking it as numeric variable does not make sense for fitting a model. There also are two alternatives to deal with this feature. One alternative is to translate it to a categorical variable. Each zip code corresponds to a variable and we could separate this variable into many variable, each represented by dummy variable with value 0 and 1. Another alternative is to use the latitude and longitude of the center point of the zipcode as two new variables. Notice that our dataset has already had longitude and latitude. Hence, we just discard this feature.
+
 \subsubsection{Missing Value}
 This dataset is pretty clean and hence we do not need to deal with multifarious missing value.
 
-There only one variable we should consider is “yr$\rule{0.15cm}{0.1mm}$renovated”(Year when the house was renovated). This dataset contains houses that have been renovated with value 0 or NOT have been renovated with value renovated year. It makes more sense that whether this house have been renovated than when the house was renovated. Hence, we translate this variable into dummy variable with value 0 (representing NOT been renovated) and 1(representing have been renovated)
+There only two variable that have a huge amount of zero value are “yr$\rule{0.15cm}{0.1mm}$renovated”(Year when the house was renovated) and “sqft$\rule{0.15cm}{0.1mm}$basement”(Square Footage of Basement).
+\begin{figure}[h]
+\includegraphics[scale=0.6]{19}
+\caption{Variables with a large amount of zeros}
+\end{figure}
+We have the issue that we do not know that whether the zero value means that these records miss a value or it means these records do not satisfied that feature. Take “yr$\rule{0.15cm}{0.1mm}$renovated” for example, does zero mean this house have never been renovated or does it mean we lost that value? The percentage of zeros in those two variables plotted above are $61\%$ and $96\%$, respectively. Considering that there is no requirement that the features should have a specific distribution, so we just leave these two variables.
+
 \section{Model}
-In this section, our team split our dataset into training set(4/5) and test set(1/5). Training data is used to train the model and then use the test set to see the performance of the models based on the MSE.
+In this section, our team split our dataset randomly into training set(4/5) and test set(1/5). Training data is used to train the model and then use the test set to see the performance of the models based on the MSE.
 \subsection{Tree Based Method}
-Tree-based method is a popular method for either classification problem or regression problems. In lecture we have learned bagging, random forest and boosting. Considering that the random forest method is more well-performed than bagging and boosting, thus random forest will be discussed in this section.
+Tree-based method is a popular method for either classification problem or regression problems. In lecture we have learned bagging, random forest and boosting. Considering that the random forest method is more well-performed than bagging generally, thus random forest and boosting will be discussed in this section.
 
 In general, we choose the number of predictor, which needs to be performed in every split, as one third of for regression problems. The number of trees is set to 500 since it will not be overfitting for random forest and 500 trees is enough for our fitting.
 
@@ -85,55 +108,88 @@ Just as a further investigation we would like to view the importance of each var
 \caption{Importance of Variables}
 \end{figure}
 From this result, it means that if variable “lat” is deducted from this model, then there might be much impact on prediction performance of this model. It is may because this variable “lat” is chosen very early in the split process. 
+\subsection{Boosting}
+For the boosting, it is to fit a new tree to the RESIDUAL of the previous model. The Algorithm for boosting regression trees is show as below.(ISLR 8.2.3) 
+
+Algorithm (for boosting regression tree):\\
+1 Initialization: $\widehat{f}\equiv 0$ and $r_i =y_i, i=1,...,n$\\
+2 For $b=1,...,B$:
+
+\textbf{a} Fit residual: Fit a new tree $\widehat{f}^b$ with $d+1$ leaves to the data X, r
+
+\textbf{b} Shrink and combine: Update $\widehat{f}$ by adding a shrunken version of $\widehat{f}^b$:
+\begin{center}
+$\widehat{f}(x)\leftarrow \widehat{f}(x) +\lambda \widehat{f}^b(x)$
+\end{center}
+\textbf{c} Update residuals:
+\begin{center}
+$r_i\leftarrow r_i +\lambda \widehat{f}^b(x_i) \quad i=1,...,n$
+\end{center}
+\begin{figure}[h]
+\includegraphics[scale=1]{20}
+\caption{Cross Validation for the Number of Trees}
+\end{figure}
+We take the depth as 4 and choose the number of trees through cross validation as figure 9, here, we choose the maximum number we set 5000.And then we perform that training model on test dataset. The MSE is 0.0414706.
+
 \section{Regression}
 In the lecture, we discuss quadratic, Huber and quantile loss functions, and lasso and ridge regularization for regression problems. Here we will perform several different combinations.
-
 \subsection{Quadratic Regression without Regulation}
-For fitting a well-performed model, our goal is to minimize:\\
+For fitting the quadratic regression without regularization, our goal is to minimize:
 \begin{center}
 $minimize \quad \Sigma_{i=1}^n (y_i -w^T x_i)^2$
 \end{center}
-After performing this model, we get MSE 0.06192281
-and plot the predicted price and the true price.
+Firstly, we train a model using training data set, and then get MSE 0.06192281 when performing the model on the test data. In order to see the performance of the model, we plot the predicted price and the true price as we as the straight line(y = x) to compare them.
 \begin{figure}[h]
 \includegraphics[scale=0.9]{7}
 \caption{Quadratic Loss Function without Regularization}
 \end{figure}
-To improve the model, we are going to apply shrinkage methods using ridge regression and lasso regression, both of which need to tune the parameter $\lambda$. Every $\lambda$ corresponds to a regularization function, so we are going to perform cross validation on training data set to determine the $\lambda$ that gives the least MSE.
+\begin{figure}[h]
+\includegraphics[scale=1.05]{21}
+\caption{Residuals and Log(price)}
+\end{figure}
+ From the plot and the MSE we got, the MSE seems pretty good. However,as the Log(price) tend to be the middle value, the residuals became larger.
 
 \subsection{Quadratic Regression with LASSO Regularization}
+To improve the model, we are going to apply shrinkage methods using ridge regression and lasso regression, both of which need to tune the parameter $\lambda$. Every $\lambda$ corresponds to a regularization function, so we are going to perform cross validation on training data set to determine the $\lambda$ that gives the least MSE.
+
 For the lasso problem, the goal is to minimize the function below:
 \begin{center}
 $minimize \quad \Sigma_{i=1}^n (y_i -w^T x_i)^2+\lambda \Sigma_{i=1}^n \vert w \vert$
 \end{center}
+Note that lasso regularization can shrink the coefficient to zeros, which is useful for dealing with those nonsignificant variables in predicting process. 
 \begin{figure}[h]
 \includegraphics[scale=0.55]{8}
-\caption{Result of Cross Validation}
+\caption{Result of Cross Validation for Quadratic Regression with Lasso Regularization}
 \end{figure}
-After performing the cross-validation process using 10 folds, it outputs the $\lambda$ 0.0007979959 with the smallest MSE.
+After performing the cross-validation process using 10-folds, it outputs the $\lambda$ 0.0007979959 (the dashed line in the figure above) with the smallest MSE.
 
-
-Next step, we use the 0.0007979959 for $\lambda$ to training the model and then figure out the MSE 0.0619331 on test set. 
+Next step, we use the 0.0007979959 for $\lambda$ to training the model and then figure out the MSE = 0.0619331 on test set.
 \begin{figure}[h]
 \includegraphics[scale=0.75]{9}
 \caption{Quadratic Loss Function with Lasso Regularization}
 \end{figure}
-Note that lasso regularization can shrink the coefficient to zeros, which is useful for dealing with those variables that play less important role in predicting process. 
+\begin{figure}[h]
+\includegraphics[scale=1.05]{22}
+\caption{Residuals and Log(price) for Quadratic Regression with Lasso Regularization}
+\end{figure}
+The residuals plot is pretty same with that in section 4.1, the Log(price) tend to be the middle value, the residuals became larger.
 \subsection{Quadratic Regression with Ridge Regularization}
+For the ridge problem, the goal is to minimize the function below:
 \begin{center}
 $minimize \quad \Sigma_{i=1}^n (y_i -w^T x_i)^2+\lambda \Sigma_{i=1}^n w^2$
 \end{center}
+Compared to lass regularization, ridge regression also could shrink the coefficients, the difference is that the ridge regression can NOT shrink the coefficients to zero. The advantage is that it can leave and consider the effect of all variables.
+
 After performing the cross-validation process using 10 folds, it outputs the $\lambda$ 0.04065101 with the smallest MSE.
 \begin{figure}[h]
 \includegraphics[scale=0.6]{10}
-\caption{Result of Cross Validation}
+\caption{Result of Cross Validation for Quadratic Regression with Ridge Regularization}
 \end{figure}
-Next step, we use the 0.04065101 for $\lambda$ to training the model and then figure out the MSE 0.06217825 on test set
+Next step, we use the 0.04065101 for $\lambda$ to training the model and then figure out the MSE 0.06217825 on test set.
 \begin{figure}[h]
 \includegraphics[scale=0.55]{11}
-\caption{Quadratic Loss Function with Ridge Regularization}
+\caption{Quadratic Loss Function with Quadratic Regression with Ridge Regularization}
 \end{figure}
-Compared to lass regularization, ridge regression also could shrink the coefficients, the difference is that the ridge regression cannot shrink the coefficients to zeros. The advantage is that it can leave and consider the effect of all variables.
 \subsection{Huber Regression with LASSO Regularization}
 For this ridge problem, the goal is to minimize the function below:
 \begin{center}
@@ -148,15 +204,17 @@ k(\vert z \vert -\frac{1}{2}k) \qquad \vert z\vert \geq k
 \end{array}
 \right$
 \end{center}
+This loss function is quadratic for small values of z and linear for large values, with equal values and slopes of the different sections at the two points where |z|= k. The variable z often refers to the residuals, that is to the difference between the observed and predicted values z = log(predicted price)-log(true price).
+
+Likewise, we choose $\lambda$ as 0.004526363 from cross validation and then perform the model on test dataset to figure out MSE 0.06243748. 
 \begin{figure}[h]
 \includegraphics[scale=0.7]{12}
-\caption{Result of Cross Validation}
+\caption{Result of Cross Validation for Huber with Lasso Regularization}
 \end{figure}
 \begin{figure}[h]
 \includegraphics[scale=0.7]{13}
 \caption{Huber Loss Function with Lasso Regularization}
 \end{figure}
-Likewise, we choose $\lambda$ as 0.004526363 from cross validation and then perform the model on test dataset to figure out MSE 0.06243748. 
 
 \subsection{Huber Regression with Ridge Regularization}
 For this ridge problem, the goal is to minimize the function below:
@@ -174,29 +232,52 @@ k(\vert z \vert -\frac{1}{2}k) \qquad \vert z\vert^2 \geq k
 \end{center}
 \begin{figure}[h]
 \includegraphics[scale=0.55]{14}
-\caption{Result of Cross Validation}
+\caption{Result of Cross Validation for Huber with Ridge Regularization}
 \end{figure}
 \begin{figure}[h]
 \includegraphics[scale=0.55]{15}
 \caption{Huber Loss Function with Ridge Regularization}
 \end{figure}
 Likewise, we choose $\lambda$ as 0.01390546 from cross validation and then perform the model on test dataset to figure out MSE 0.06246271. 
-
 \section{Summary}
+From the figure 21, it indicates that the best method for this dataset I have performed is random forest with the least MSE.
+
+It is really strange that no matter what loss functions (Huber or quadratic regression) that we use with lasso or ridge regularization. We keep getting very small value of $\lambda$. And because the smaller it is, the power of its penalty to the coefficients is less. As the $\lambda$ we get tends to be zero, it is the same with the loss function without regularization. Hence, the plots within the same loss function look pretty same. 
 \begin{figure}[h]
 \includegraphics[scale=0.4]{16}
 \caption{MSE Table}
 \end{figure}
-From the table, it indicates that the best method for this dataset I have performed is random forest with the least MSE.
-
-It is really strange that whether we use Huber or quadratic regression with lasso or ridge regularization. We keep getting very small value of $\lambda$. And because the smaller it is, the power of its penalty to the coefficients is less. As the $\lambda$ we get tends to be zero, it is the same with the loss function without regularization. Hence, the plots within the same loss function look pretty same. 
 
 \section{Future Improvement}
 \subsection{Polynomial Regression}
-It could be considered that to perform polynomial regression to avoid under-fitting and try several different orders of the variables and use cross validation to determine the order than gives the least MSE.
+It could be considered that to perform polynomial regression to avoid under-fitting and try several different orders of the features and use cross validation to determine the order than gives the least MSE.
 
 \subsection{Future Section}
-We also could do feature selection to choose the proper number of features to fit the model using backward selection and forward selection. 
+We also could do feature selection to choose the proper number of features to fit the model using backward selection, forward selection or best selection. Considering that the dataset just has 18 features, we could use the best selection which is to find the global optimal solution. We plot the relationship between the number of variables used with adjust square of R. 
+\begin{center}
+$R_{adj}^2=1-\frac{(1-R^2)(n-1)}{n-k-1}$
+\end{center}
+Where N is the number of points in data set and K is the number of independent features.
+ 
+Adjust R-square indicates how well terms fit a curve, but adjusts for the number of terms in a model. If more useless features are added into the model, the adjust R-square will decrease. 
+\begin{figure}[h]
+\includegraphics[scale=0.8]{23}
+\caption{Adjust Rsq plot}
+\end{figure}
+\begin{figure}[h]
+\includegraphics[scale=0.8]{24}
+\caption{Choosing the Number of Variables}
+\end{figure}
+From the plot above, it is acceptable to only use 5 features in our model which gives a relative high adjust R-square. Also, based on the figure, we choose “sqft$\rule{0.15cm}{0.1mm)}$living”, “view”, “grade”, “yr$\rule{0.15cm}{0.1mm)}$built” and “lat” to training our model using the techniques in previous sections.
 
+\section{Reference}
+(1) A PEEK INSIDE THE HOUSE PRICING BLACK BOX: \\
+https://github.com/woshibobo/ORIE-4741Project/blob/master/final$\rule{0.15cm}{0.1mm)}$report.pdf\\
+\\(2) Adjust R-square:\\
+https://www.quora.com/What-is-the-difference-between-R-squared-and-Adjusted-R-squared\\
+\\(3) ISLR:\\
+http://www-bcf.usc.edu/~gareth/ISL/\\
+\\(4) Huber Loss:\\
+https://en.wikipedia.org/wiki/Huber$\rule{0.15cm}{0.1mm)}$loss
 \lipsum[0]
 \end{document}
